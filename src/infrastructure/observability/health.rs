@@ -34,8 +34,8 @@ impl HealthRegistry {
     /// GET /ready → readiness, corre los checks; 503 si alguno falla.
     pub async fn readiness(&self) -> StatusCode {
         for check in &self.checks {
-            if check.check().await.is_err() {
-                tracing::warn!(check = check.name(), "health check falló");
+            if let Err(reason) = check.check().await {
+                tracing::warn!(check = check.name(), reason = %reason, "health check falló");
                 return StatusCode::SERVICE_UNAVAILABLE;
             }
         }
