@@ -2,7 +2,7 @@
 name = "ddd-core"
 version = "0.1.0"
 edition = "2021"
-description = "Kernel genérico DDD + Hexagonal para backends Rust — ver infra-platform/project base/ddd_kernel_mold.md"
+description = "Generic DDD + Hexagonal kernel for Rust backends — see infra-platform/project base/ddd_kernel_mold.md"
 
 [dependencies]
 tokio = { version = "1", features = ["sync", "signal", "rt-multi-thread"] }
