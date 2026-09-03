@@ -1,6 +1,6 @@
-// RFC 7807 (Problem Details for HTTP APIs) — adoptado del proyecto
-// `contract_parent` (módulo `party`), que ya lo tenía probado en producción.
-// Más estándar que un envelope de error propio inventado.
+// RFC 7807 (Problem Details for HTTP APIs) — adopted from the
+// `contract_parent` project (`party` module), already production-proven
+// there. More standard than a homegrown error envelope.
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -20,8 +20,8 @@ pub struct ProblemDetail {
     pub title: String,
     pub status: u16,
     pub detail: String,
-    /// El path del request — se completa vía el request-id middleware
-    /// cuando corre dentro de un handler; `None` fuera de ese contexto.
+    /// The request path — filled in by the request-id middleware when
+    /// running inside a handler; `None` outside that context.
     pub instance: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<HashMap<String, String>>,

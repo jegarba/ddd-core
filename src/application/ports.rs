@@ -12,10 +12,10 @@ pub trait ReadRepository<T: AggregateRoot + Send + Sync>: Send + Sync {
 
 #[async_trait]
 pub trait WriteRepository<T: AggregateRoot + Send + Sync>: Send + Sync {
-    /// Recibe la entidad SIN id — la implementación lo asigna y lo devuelve
-    /// en el resultado.
+    /// Receives the entity WITHOUT an id — the implementation assigns one
+    /// and returns it in the result.
     async fn create(&self, entity: T) -> Result<T, DomainError>;
-    /// Recibe la entidad CON id ya asignado — persiste el estado actual.
+    /// Receives the entity WITH an id already assigned — persists current state.
     async fn update(&self, entity: T) -> Result<T, DomainError>;
     async fn delete(&self, id: &T::Id) -> Result<(), DomainError>;
 }

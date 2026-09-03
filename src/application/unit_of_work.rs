@@ -1,10 +1,8 @@
-/// Cuando un caso de uso necesita que dos escrituras de agregados distintos
-/// sean atómicas, no se resuelve pasando `sqlx::Transaction` hacia
-/// `application` (rompe Low Coupling) — se resuelve con un puerto que
-/// exponga "ejecutá esto atómicamente" sin que el dominio sepa que por
-/// debajo hay una transacción real.
+/// When a use case needs two different aggregates' writes to be atomic, it's
+/// not solved by passing `sqlx::Transaction` into `application` (breaks Low
+/// Coupling) — it's solved with a port that exposes "run this atomically"
+/// without the domain knowing there's a real transaction underneath.
 ///
-/// Firma exacta: deliberadamente no cerrada — se diseña contra el primer
-/// caso real con dos agregados en la misma transacción, no contra uno
-/// hipotético.
+/// Exact signature deliberately left open — designed against the first real
+/// case with two aggregates in one transaction, not a hypothetical one.
 pub trait UnitOfWork: Send + Sync {}

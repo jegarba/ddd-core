@@ -1,14 +1,14 @@
-/// Espera SIGINT (Ctrl-C) o SIGTERM — usar con
+/// Waits for SIGINT (Ctrl-C) or SIGTERM — use with
 /// `axum::serve(listener, app).with_graceful_shutdown(signal())`.
 pub async fn signal() {
     let ctrl_c = async {
-        tokio::signal::ctrl_c().await.expect("no se pudo instalar el handler de ctrl-c");
+        tokio::signal::ctrl_c().await.expect("failed to install ctrl-c handler");
     };
 
     #[cfg(unix)]
     let terminate = async {
         tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .expect("no se pudo instalar el handler de SIGTERM")
+            .expect("failed to install SIGTERM handler")
             .recv()
             .await;
     };

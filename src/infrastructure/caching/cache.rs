@@ -7,7 +7,8 @@ use async_trait::async_trait;
 use crate::application::ports::ReadRepository;
 use crate::domain::{AggregateRoot, DomainError};
 
-/// Contrato mínimo — el molde no elige Redis, LRU en memoria, ni nada concreto.
+/// Minimal contract — the kernel doesn't pick Redis, in-memory LRU, or
+/// anything concrete.
 #[async_trait]
 pub trait Cache<K, V>: Send + Sync {
     async fn get(&self, key: &K) -> Option<V>;
@@ -15,8 +16,8 @@ pub trait Cache<K, V>: Send + Sync {
     async fn invalidate(&self, key: &K);
 }
 
-/// Decorator sobre `ReadRepository<T>` — `application` nunca se entera de
-/// que existe, sigue usando el mismo `QueryUseCase` de siempre.
+/// Decorator over `ReadRepository<T>` — `application` never finds out it
+/// exists, it keeps using the same `QueryUseCase` as always.
 pub struct CachedReadRepository<T, R, C> {
     inner: Arc<R>,
     cache: Arc<C>,
@@ -48,7 +49,7 @@ where
         Ok(result)
     }
     async fn find_all_paginated(&self, limit: i64, offset: i64) -> Result<Vec<T>, DomainError> {
-        // Listados no cachean 1:1 por defecto — cada proyecto decide si vale la pena acá.
+        // Listings aren't cached 1:1 by default — each project decides if it's worth it here.
         self.inner.find_all_paginated(limit, offset).await
     }
 }

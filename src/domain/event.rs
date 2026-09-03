@@ -1,14 +1,14 @@
 use tokio::sync::broadcast;
 
-/// Cualquier evento de dominio solo necesita ser clonable y enviable entre
-/// tareas — el molde no sabe qué pasó, solo transporta.
+/// Any domain event just needs to be cloneable and sendable across tasks —
+/// the kernel doesn't know what happened, it only transports.
 pub trait DomainEvent: Clone + Send + Sync + 'static {}
 
-/// ⚠️ Best-effort, no confiable: `publish` descarta el resultado a propósito
-/// — sin suscriptores, o con uno lento (`RecvError::Lagged`), el evento se
-/// pierde en silencio. Para un efecto que NO puede perderse, usar el patrón
-/// Outbox (tabla `outbox` en la misma transacción del agregado) — no
-/// implementado acá, se construye contra el primer caso real.
+/// Best-effort, not reliable: `publish` discards the result on purpose — with
+/// no subscribers, or a slow one (`RecvError::Lagged`), the event is silently
+/// dropped. For an effect that CANNOT be lost, use the Outbox pattern (an
+/// `outbox` table in the same transaction as the aggregate) — not
+/// implemented here, build it against the first real case that needs it.
 pub struct EventBus<E: DomainEvent> {
     sender: broadcast::Sender<E>,
 }

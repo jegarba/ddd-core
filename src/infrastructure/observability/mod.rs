@@ -6,6 +6,6 @@ pub use health::{HealthCheck, HealthRegistry};
 pub use logging::init_tracing;
 pub use shutdown::signal;
 
-// Métricas (Prometheus/`metrics` crate): despriorizado a pedido — es "un
-// adapter más" (§2.3 del mold), no bloquea el arranque de los primeros
-// microservicios. Se agrega cuando haga falta medir algo puntual.
+// Metrics (Prometheus/`metrics` crate): deprioritized on request — it's
+// "one more adapter" (mold §2.3), doesn't block the first microservices
+// from shipping. Add it when there's something concrete to measure.

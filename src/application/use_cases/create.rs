@@ -6,21 +6,20 @@ use async_trait::async_trait;
 use crate::application::ports::WriteRepository;
 use crate::domain::{AggregateRoot, DomainError};
 
-/// Cada dominio implementa esto UNA vez — acá vive la regla específica
-/// (ej: "el email no puede repetirse"), no en el kernel.
+/// Each domain implements this ONCE — the domain-specific rule (e.g. "email
+/// must be unique") lives here, not in the kernel.
 #[async_trait]
 pub trait CreationPolicy<T: AggregateRoot, Input>: Send + Sync {
     async fn build(&self, input: Input) -> Result<T, DomainError>;
-    /// Chequeo de invariante GLOBAL que necesita consultar el repositorio
-    /// (ej. unicidad) — el kernel orquesta cuándo se llama, el dominio
-    /// decide qué chequear.
+    /// GLOBAL invariant check that needs the repository (e.g. uniqueness) —
+    /// the kernel orchestrates when it's called, the domain decides what to check.
     async fn check_invariants(&self, entity: &T) -> Result<(), DomainError>;
 }
 
-/// No publica eventos por sí mismo — si el evento de creación importa,
-/// el caller (el handler REST, u otro orquestador) lo publica después de
-/// `execute()` con su propio `EventBus`. Cargar un `EventBus` acá adentro
-/// sin usarlo sería dead code — YAGNI.
+/// Does not publish events itself — if the creation event matters, the
+/// caller (REST handler, or another orchestrator) publishes it after
+/// `execute()` with its own `EventBus`. Holding an unused `EventBus` here
+/// would be dead code — YAGNI.
 pub struct CreateUseCase<T, R, P>
 where
     T: AggregateRoot + Send + Sync,

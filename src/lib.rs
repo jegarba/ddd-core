@@ -1,5 +1,5 @@
-//! `ddd-core` — kernel genérico DDD + Hexagonal para backends Rust.
-//! Ver `infra-platform/project base/ddd_kernel_mold.md` para el diseño completo.
+//! `ddd-core` — generic DDD + Hexagonal kernel for Rust backends.
+//! See `infra-platform/project base/ddd_kernel_mold.md` for the full design.
 
 pub mod application;
 pub mod domain;

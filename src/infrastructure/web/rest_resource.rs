@@ -27,13 +27,12 @@ fn default_limit() -> i64 {
     20
 }
 
-/// Conecta `QueryUseCase`/`CreateUseCase` a rutas CRUD estándar. Boilerplate
-/// por dominio: cero handlers nuevos — solo `RestResource::new(...).router()`.
+/// Wires `QueryUseCase`/`CreateUseCase` into standard CRUD routes.
+/// Per-domain boilerplate: zero new handlers — just `RestResource::new(...).router()`.
 ///
-/// Guarda el repositorio además de los use cases porque `delete` es una
-/// operación de escritura simple (sin política/regla de negocio propia como
-/// `create`) — no amerita un caso de uso genérico aparte, se llama directo
-/// al puerto de escritura.
+/// Keeps the repository alongside the use cases because `delete` is a
+/// plain write operation (no policy/business rule like `create` has) — not
+/// worth a separate generic use case, it calls the write port directly.
 pub struct RestResource<T, R, P>
 where
     T: AggregateRoot + Send + Sync,
@@ -63,11 +62,11 @@ where
     pub fn router(self) -> Router {
         Router::new()
             .route("/", get(Self::list).post(Self::create_h))
-            // axum 0.7.9 resuelve matchit 0.7.x — sintaxis de path param es
-            // `:id`, NO `{id}` (eso es de axum 0.8/matchit 0.8). Bug real
-            // encontrado 2026-09-02 al agregar el primer test que dispara un
-            // request HTTP de verdad contra esta ruta — ningún test previo
-            // lo hacía, solo verificaban que el Router compilara.
+            // axum 0.7.9 resolves to matchit 0.7.x — path param syntax is
+            // `:id`, NOT `{id}` (that's axum 0.8/matchit 0.8). Real bug
+            // found 2026-09-02 when the first test that fires a real HTTP
+            // request against this route was added — no prior test did,
+            // they only checked the Router compiled.
             .route("/:id", get(Self::get_h).put(Self::update_h).delete(Self::delete_h))
             .with_state(Arc::new(self))
     }
@@ -94,13 +93,12 @@ where
         Ok((StatusCode::CREATED, Json(s.create.execute(input).await?)))
     }
 
-    /// No hay `UpdateUseCase` genérico — a diferencia de `create` (que
-    /// necesita `CreationPolicy` para asignar el id y validar invariantes de
-    /// creación), `update` recibe la entidad ya completa y madura: se llama
-    /// directo al puerto de escritura, mismo criterio que `delete_h` ya usa.
-    /// El id de la URL es la fuente de verdad — si el body trae uno distinto
-    /// (o ninguno), se rechaza en vez de dejar que el body lo pise en
-    /// silencio.
+    /// No generic `UpdateUseCase` — unlike `create` (which needs
+    /// `CreationPolicy` to assign the id and validate creation invariants),
+    /// `update` receives an already-complete entity: it calls the write
+    /// port directly, same as `delete_h` already does. The URL id is the
+    /// source of truth — if the body carries a different one (or none), it's
+    /// rejected instead of letting the body silently override it.
     async fn update_h(
         State(s): State<Arc<Self>>,
         Path(id): Path<String>,
@@ -110,14 +108,10 @@ where
         match entity.id() {
             Some(body_id) if *body_id == path_id => {}
             Some(_) => {
-                return Err(DomainError::Validation(
-                    "el id del body no coincide con el id de la URL".into(),
-                ))
+                return Err(DomainError::Validation("body id does not match the URL id".into()))
             }
             None => {
-                return Err(DomainError::Validation(
-                    "el body debe incluir el id al actualizar".into(),
-                ))
+                return Err(DomainError::Validation("body must include the id when updating".into()))
             }
         }
         Ok(Json(s.repository.update(entity).await?))
@@ -137,6 +131,5 @@ fn parse_id<T: AggregateRoot>(raw: &str) -> Result<T::Id, DomainError>
 where
     T::Id: FromStr,
 {
-    raw.parse::<T::Id>()
-        .map_err(|_| DomainError::Validation(format!("id inválido: {raw}")))
+    raw.parse::<T::Id>().map_err(|_| DomainError::Validation(format!("invalid id: {raw}")))
 }

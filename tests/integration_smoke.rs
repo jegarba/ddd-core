@@ -1,8 +1,7 @@
-//! Prueba de humo: un dominio de juguete (`Widget`) atravesando TODO el
-//! pipeline genérico — Entity/AggregateRoot, InMemoryRepository,
-//! QueryUseCase, CreateUseCase+CreationPolicy, y RestResource (arma el
-//! Router real). Si esto compila y pasa, el molde funciona de punta a punta,
-//! no solo en el papel.
+//! Smoke test: a toy domain (`Widget`) going through the ENTIRE generic
+//! pipeline — Entity/AggregateRoot, InMemoryRepository, QueryUseCase,
+//! CreateUseCase+CreationPolicy, and RestResource (builds the real Router).
+//! If this compiles and passes, the kernel works end to end, not just on paper.
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -36,7 +35,7 @@ impl CreationPolicy<Widget, Widget> for UniqueNamePolicy {
     }
     async fn check_invariants(&self, entity: &Widget) -> Result<(), DomainError> {
         if entity.name.trim().is_empty() {
-            return Err(DomainError::Validation("name no puede estar vacío".into()));
+            return Err(DomainError::Validation("name cannot be empty".into()));
         }
         Ok(())
     }
@@ -48,12 +47,12 @@ async fn create_use_case_persists_via_in_memory_repository() {
     let policy = Arc::new(UniqueNamePolicy);
     let create = ddd_core::application::CreateUseCase::new(repo.clone(), policy);
 
-    let widget = Widget { id: Some(Uuid::new_v4()), name: "tornillo".into() };
-    let created = create.execute(widget.clone()).await.expect("create debe funcionar");
+    let widget = Widget { id: Some(Uuid::new_v4()), name: "bolt".into() };
+    let created = create.execute(widget.clone()).await.expect("create should succeed");
     assert_eq!(created, widget);
 
     let query = QueryUseCase::new(repo);
-    let found = query.find_by_id(widget.id.unwrap()).await.expect("debe encontrarlo");
+    let found = query.find_by_id(widget.id.unwrap()).await.expect("should find it");
     assert_eq!(found, widget);
 }
 
@@ -64,7 +63,7 @@ async fn create_use_case_rejects_invalid_invariant() {
     let create = ddd_core::application::CreateUseCase::new(repo, policy);
 
     let widget = Widget { id: Some(Uuid::new_v4()), name: "".into() };
-    let err = create.execute(widget).await.expect_err("debe rechazar nombre vacío");
+    let err = create.execute(widget).await.expect_err("should reject empty name");
     assert!(matches!(err, DomainError::Validation(_)));
 }
 
@@ -75,7 +74,7 @@ async fn query_use_case_list_paginates() {
         repo.create(Widget { id: Some(Uuid::new_v4()), name: format!("w{i}") })
             .await
             .unwrap();
-        // create() viene de WriteRepository — importarlo para poder llamarlo directo acá.
+        // create() comes from WriteRepository — imported to call it directly here.
     }
     let query = QueryUseCase::new(repo);
     let page = query.list(1, 3).await.unwrap();
@@ -84,9 +83,10 @@ async fn query_use_case_list_paginates() {
 
 #[test]
 fn rest_resource_router_builds_for_a_concrete_domain() {
-    // No levanta un server real — solo prueba que el tipado genérico de
-    // RestResource<Widget, InMemoryRepository<Widget>, UniqueNamePolicy>
-    // efectivamente compila y arma un Router válido para un dominio concreto.
+    // Doesn't spin up a real server — only proves that
+    // RestResource<Widget, InMemoryRepository<Widget>, UniqueNamePolicy>'s
+    // generic typing actually compiles and builds a valid Router for a
+    // concrete domain.
     let repo = Arc::new(InMemoryRepository::<Widget>::new());
     let policy = Arc::new(UniqueNamePolicy);
     let resource = RestResource::new(repo, policy);
@@ -94,9 +94,9 @@ fn rest_resource_router_builds_for_a_concrete_domain() {
 }
 
 // ── PUT /:id (update) — egyptians-ms-product FR-013 ─────────────────────────
-// A diferencia de las pruebas de arriba (llaman los use cases directo), estas
-// manejan requests HTTP reales contra el Router — es la única forma de probar
-// que la ruta PUT quedó realmente cableada, no solo que el tipo compila.
+// Unlike the tests above (which call the use cases directly), these drive
+// real HTTP requests against the Router — the only way to prove the PUT
+// route is actually wired, not just that the type compiles.
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
@@ -115,7 +115,7 @@ async fn update_route_persists_via_write_repository() {
 
     let router = RestResource::new(repo.clone(), Arc::new(UniqueNamePolicy)).router();
 
-    let updated = Widget { id: Some(id), name: "actualizado".into() };
+    let updated = Widget { id: Some(id), name: "updated".into() };
     let req = Request::builder()
         .method(Method::PUT)
         .uri(format!("/{id}"))
@@ -126,11 +126,11 @@ async fn update_route_persists_via_write_repository() {
     let res = router.oneshot(req).await.unwrap();
     assert_eq!(res.status(), StatusCode::OK);
     let got: Widget = body_json(res).await;
-    assert_eq!(got.name, "actualizado");
+    assert_eq!(got.name, "updated");
 
-    // el id no cambió — solo se actualizó el contenido
+    // id didn't change — only the content was updated
     let found = repo.find_by_id(&id).await.unwrap().unwrap();
-    assert_eq!(found.name, "actualizado");
+    assert_eq!(found.name, "updated");
 }
 
 #[tokio::test]
@@ -151,10 +151,8 @@ async fn update_route_rejects_mismatched_body_id() {
         .unwrap();
 
     let res = router.oneshot(req).await.unwrap();
-    // 400 exacto, no solo "algún 4xx" — un 404 también pasaría
-    // is_client_error() y hubiera enmascarado el bug de sintaxis de ruta
-    // que este mismo test ayudó a encontrar (ver rest_resource.rs).
+    // exact 400, not just "some 4xx" — a 404 would also pass
+    // is_client_error() and would have masked the route-syntax bug this
+    // very test helped find (see rest_resource.rs).
     assert_eq!(res.status(), StatusCode::BAD_REQUEST);
 }
-
-

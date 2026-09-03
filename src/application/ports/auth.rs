@@ -2,15 +2,15 @@ use async_trait::async_trait;
 
 use crate::domain::DomainError;
 
-/// Resultado de autenticar una petición — opaco: no le importa si la
-/// credencial era un JWT, una API key, o lo que sea.
+/// Result of authenticating a request — opaque: doesn't care whether the
+/// credential was a JWT, an API key, or anything else.
 pub trait Principal: Send + Sync {
     fn subject_id(&self) -> &str;
     fn has_permission(&self, permission: &str) -> bool;
 }
 
-/// El proyecto concreto implementa esto contra lo que use (o no lo usa,
-/// si el servicio no necesita auth). El molde nunca importa un proveedor.
+/// The concrete project implements this against whatever it uses (or
+/// doesn't, if the service needs no auth). The kernel never imports a provider.
 #[async_trait]
 pub trait Authenticator: Send + Sync {
     type P: Principal;

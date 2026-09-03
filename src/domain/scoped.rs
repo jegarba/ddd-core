@@ -1,6 +1,6 @@
-/// Capacidad OPCIONAL — un dominio la implementa solo si sus Entidades
-/// necesitan filtrarse por "algo" (tenant, organización, workspace...). El
-/// molde no define qué es un scope; solo reserva la forma.
+/// OPTIONAL capability — a domain implements this only if its entities need
+/// filtering by "something" (tenant, organization, workspace...). The kernel
+/// doesn't define what a scope is, only reserves the shape.
 pub trait Scoped {
     type ScopeId: Clone + Eq + Send + Sync;
     fn scope_id(&self) -> &Self::ScopeId;

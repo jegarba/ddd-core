@@ -1,5 +1,5 @@
-// ⚠️ SOLO PARA TESTS. Usa `std::sync::RwLock` (bloqueante) dentro de
-// métodos `async` — un adapter real usa `tokio::sync::RwLock`, nunca esto.
+// TEST-ONLY. Uses `std::sync::RwLock` (blocking) inside `async` methods — a
+// real adapter uses `tokio::sync::RwLock`, never this.
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::RwLock;
@@ -58,13 +58,12 @@ where
     T::Id: Hash,
 {
     async fn create(&self, entity: T) -> Result<T, DomainError> {
-        // Mismo contrato que Postgres: create() no exige id previo — el
-        // dominio lo asigna en su propio CreationPolicy::build (ej. UUID).
-        let id = entity.id().cloned().ok_or_else(|| {
-            DomainError::Infrastructure(
-                "entidad sin id en create() — el dominio debe asignarlo antes".into(),
-            )
-        })?;
+        // Same contract as Postgres: create() doesn't require a prior id —
+        // the domain assigns it in its own CreationPolicy::build (e.g. UUID).
+        let id = entity
+            .id()
+            .cloned()
+            .ok_or_else(|| DomainError::Infrastructure("entity has no id in create() — the domain must assign one first".into()))?;
         self.store.write().unwrap().insert(id, entity.clone());
         Ok(entity)
     }
@@ -72,7 +71,7 @@ where
         let id = entity
             .id()
             .cloned()
-            .ok_or_else(|| DomainError::Infrastructure("entidad sin id en update()".into()))?;
+            .ok_or_else(|| DomainError::Infrastructure("entity has no id in update()".into()))?;
         self.store.write().unwrap().insert(id, entity.clone());
         Ok(entity)
     }
